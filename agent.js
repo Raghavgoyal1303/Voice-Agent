@@ -12,6 +12,7 @@ const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
 
 const groq = new Groq({ apiKey: GROQ_API_KEY });
 const deepgram = createClient(DEEPGRAM_API_KEY);
+const AGENT_PROFILES = require('./agents.config');
 
 const app = express();
 app.use(express.static('public'));
@@ -23,11 +24,11 @@ const wss = new WebSocket.Server({ server, path: '/stream' });
 
 const conversations = new Map();
 
-async function streamMurfAudioToBrowser(text, ws) {
+async function streamMurfAudioToBrowser(text, ws, voiceId) {
   return new Promise(async (resolve, reject) => {
     try {
       const data = {
-        voiceId: 'en-US-ken', // Switched to the Ken male voice
+        voiceId: voiceId || 'en-US-ken', 
         style: 'Conversational',
         text: text,
         format: 'PCM',
@@ -87,8 +88,13 @@ async function streamMurfAudioToBrowser(text, ws) {
   });
 }
 
-wss.on('connection', (ws) => {
-  console.log('🎙️ Browser stream connected');
+wss.on('connection', (ws, req) => {
+  // Extract agent name from URL (e.g. /stream?agent=marco)
+  const urlParams = new URLSearchParams(req.url.split('?')[1]);
+  const agentKey = urlParams.get('agent') || 'ken';
+  const profile = AGENT_PROFILES[agentKey] || AGENT_PROFILES.ken;
+
+  console.log(`🎙️ Browser stream connected - Agent: ${profile.name} (${profile.language})`);
 
   let callSid = 'web_' + Date.now();
   let isProcessing = false;
@@ -115,9 +121,9 @@ wss.on('connection', (ws) => {
           return;
         }
 
-        const nudge = "Are you still there?";
+        const nudge = profile.language.startsWith('it') ? "Ci sei ancora?" : "Are you still there?";
         console.log(`💤 Silence detected (Nudge ${nudgeCount}/3)...`);
-        await streamMurfAudioToBrowser(nudge, ws);
+        await streamMurfAudioToBrowser(nudge, ws, profile.voiceId);
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'transcript', role: 'agent', text: nudge }));
         }
@@ -128,10 +134,10 @@ wss.on('connection', (ws) => {
   const setupDeepgram = () => {
     deepgramLive = deepgram.listen.live({
       model: 'nova-2',
-      language: 'en-US', // Back to English only for speed
+      language: profile.language, 
       punctuate: true,
       interim_results: false,
-      endpointing: 1000, // Increased to 1000ms to allow more natural breathing/pausing
+      endpointing: 1000, 
       smart_format: true
     });
 
@@ -166,9 +172,7 @@ wss.on('connection', (ws) => {
           messages: [
             {
               role: 'system',
-              content: `You are Ken, a professional real estate assistant at Tricity Real Estate.
-STRICT RULE: Speak ONLY in English. Even if the user speaks another language, you MUST respond in English.
-Keep responses very short (1-2 sentences).`
+              content: profile.systemPrompt
             },
             ...recentHistory
           ],
@@ -194,7 +198,7 @@ Keep responses very short (1-2 sentences).`
           if (/[।?!,]/.test(content)) {
             const textToSpeak = currentSentence.trim();
             if (textToSpeak.length > 0) {
-              await streamMurfAudioToBrowser(textToSpeak, ws);
+              await streamMurfAudioToBrowser(textToSpeak, ws, profile.voiceId);
               currentSentence = '';
             }
           }
@@ -202,12 +206,12 @@ Keep responses very short (1-2 sentences).`
 
         const finalChunk = currentSentence.trim();
         if (finalChunk.length > 0) {
-          await streamMurfAudioToBrowser(finalChunk, ws);
+          await streamMurfAudioToBrowser(finalChunk, ws, profile.voiceId);
         }
         resetSilenceTimer(); // Reset timer after AI finishes speaking
-        console.log('🤖 Ken:', fullReply);
+        console.log(`🤖 ${profile.name}:`, fullReply);
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'transcript', role: 'agent', text: fullReply }));
+          ws.send(JSON.stringify({ type: 'transcript', role: 'agent', text: fullReply, agentName: profile.name }));
         }
         history.push({ role: 'assistant', content: fullReply });
         conversations.set(callSid, history);
@@ -238,9 +242,12 @@ Keep responses very short (1-2 sentences).`
         if (data.type === 'start') {
           console.log('📞 Stream started');
           setupDeepgram();
-          // Don't start timer here, wait for greeting to finish
-          streamMurfAudioToBrowser("Hello, thanks for calling Tricity Real Estate! How can I help you today?", ws)
-            .then(() => resetSilenceTimer()); // Start timer ONLY after greeting ends
+          resetSilenceTimer(); // Start timer on call start
+          const greeting = profile.language.startsWith('it') 
+            ? `Ciao! Sono ${profile.name} di Elite English. Ti piacerebbe imparare l'inglese in modo veloce e divertente?`
+            : "Hello, thanks for calling! How can I help you today?";
+          streamMurfAudioToBrowser(greeting, ws, profile.voiceId)
+            .then(() => resetSilenceTimer()); 
         } else if (data.type === 'stop') {
           deepgramLive?.finish();
         }

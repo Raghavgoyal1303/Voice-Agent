@@ -9,6 +9,13 @@ let mediaRecorder;
 let audioContext;
 let nextPlayTime = 0;
 
+// Dynamic Agent Selection
+const urlParams = new URLSearchParams(window.location.search);
+const currentAgent = urlParams.get('agent') || 'ken';
+
+// Update UI Title
+document.querySelector('h1').innerText = currentAgent.charAt(0).toUpperCase() + currentAgent.slice(1);
+
 btnCall.onclick = async () => {
     try {
         statusDiv.innerText = 'Requesting microphone...';
@@ -28,9 +35,9 @@ btnCall.onclick = async () => {
         audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
         nextPlayTime = audioContext.currentTime;
 
-        // Connect directly to our Node.js WebSocket server
+        // Connect directly to our Node.js WebSocket server with the agent parameter
         const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-        ws = new WebSocket(protocol + window.location.host + '/stream');
+        ws = new WebSocket(protocol + window.location.host + `/stream?agent=${currentAgent}`);
         ws.binaryType = 'arraybuffer';
 
         ws.onopen = () => {
@@ -84,7 +91,7 @@ btnCall.onclick = async () => {
                 try {
                     const data = JSON.parse(event.data);
                     if (data.type === 'transcript') {
-                        addTranscript(data.role, data.text);
+                        addTranscript(data.role, data.text, data.agentName);
                     }
                 } catch (e) {
                     console.error('Error parsing transcript:', e);
@@ -133,11 +140,11 @@ function endCall() {
     }, 2000);
 }
 
-function addTranscript(role, text) {
+function addTranscript(role, text, agentName) {
     const msgDiv = document.createElement('div');
     msgDiv.className = `msg msg-${role}`;
     msgDiv.innerHTML = `
-        <div class="msg-role">${role === 'user' ? 'You' : 'Ken'}</div>
+        <div class="msg-role">${role === 'user' ? 'You' : (agentName || 'Agent')}</div>
         <div class="msg-content">${text}</div>
     `;
     transcriptDiv.appendChild(msgDiv);
