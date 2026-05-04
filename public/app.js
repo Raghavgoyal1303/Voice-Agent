@@ -8,6 +8,21 @@ let ws;
 let mediaRecorder;
 let audioContext;
 let nextPlayTime = 0;
+let ringtoneAudio;
+
+// Prepare Ringtone
+function playRingtone() {
+    ringtoneAudio = new Audio('https://www.soundjay.com/phone/phone-calling-1.mp3');
+    ringtoneAudio.loop = true;
+    ringtoneAudio.play();
+}
+
+function stopRingtone() {
+    if (ringtoneAudio) {
+        ringtoneAudio.pause();
+        ringtoneAudio = null;
+    }
+}
 
 // Dynamic Agent Selection
 const urlParams = new URLSearchParams(window.location.search);
@@ -19,7 +34,6 @@ document.querySelector('h1').innerText = currentAgent.charAt(0).toUpperCase() + 
 btnCall.onclick = async () => {
     try {
         statusDiv.innerText = 'Requesting microphone...';
-        // Request microphone access with strict echo cancellation to prevent the AI hearing itself
         const stream = await navigator.mediaDevices.getUserMedia({ 
             audio: {
                 echoCancellation: true,
@@ -27,9 +41,15 @@ btnCall.onclick = async () => {
                 autoGainControl: true
             } 
         });
-        
-        statusDiv.innerText = 'Connecting to AI...';
-        btnCall.disabled = true;
+
+        if (currentAgent === 'giulia') {
+            statusDiv.innerText = 'Calling...';
+            playRingtone();
+            await new Promise(resolve => setTimeout(resolve, 4000)); // Ring for 4 seconds
+            stopRingtone();
+        }
+
+        statusDiv.innerText = 'Connecting...';
 
         // Initialize Audio Context for PCM playback (24000Hz to match Murf output)
         audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
@@ -124,6 +144,7 @@ btnEnd.onclick = () => {
 };
 
 function endCall() {
+    stopRingtone();
     statusDiv.innerText = 'Call Ended';
     appContainer.classList.remove('active-call');
     btnCall.style.display = 'inline-block';
