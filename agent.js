@@ -48,9 +48,7 @@ async function streamMurfAudioToBrowser(text, ws, voiceId) {
         style: 'Conversational',
         text: text,
         format: 'PCM',
-        sampleRate: 24000,
-        model: 'FALCON',
-        channelType: 'MONO'
+        sampleRate: 24000
       };
 
       console.time('Murf TTFA (' + text.substring(0, 10) + '...)');
@@ -58,7 +56,7 @@ async function streamMurfAudioToBrowser(text, ws, voiceId) {
       const res = await axios.post('https://api.murf.ai/v1/speech/stream', data, {
         headers: {
           'Content-Type': 'application/json',
-          'api-key': MURF_API_KEY
+          'token': MURF_API_KEY
         },
         responseType: 'stream'
       });
@@ -98,7 +96,13 @@ async function streamMurfAudioToBrowser(text, ws, voiceId) {
       res.data.on('error', (err) => reject(err));
 
     } catch (error) {
-      console.error('Murf AI error:', error.response ? error.response.status : error.message);
+      if (error.response) {
+        console.error('❌ Murf AI error status:', error.response.status);
+        // Pipe the error stream to string if possible, or just log data
+        console.error('❌ Murf AI error details:', error.response.data);
+      } else {
+        console.error('❌ Murf AI error:', error.message);
+      }
       resolve();
     }
   });
