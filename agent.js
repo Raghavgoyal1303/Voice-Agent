@@ -209,6 +209,7 @@ wss.on('connection', (ws, req) => {
         let firstToken = true;
         let tagBuffer = '';
         let tagDetected = false;
+        let charCount = 0;
 
         for await (const chunk of stream) {
           let content = chunk.choices[0]?.delta?.content || '';
@@ -217,8 +218,11 @@ wss.on('connection', (ws, req) => {
             firstToken = false;
           }
           
-          // Buffer logic to catch [EN], [FI], [IT] even if split across chunks
-          if (!tagDetected && (content.includes('[') || tagBuffer.length > 0)) {
+          charCount += content.length;
+
+          // Buffer logic to catch [EN], [FI], [IT]
+          // SAFETY: If we've seen more than 10 characters and still no tag, just start speaking!
+          if (!tagDetected && (content.includes('[') || tagBuffer.length > 0) && charCount < 10) {
             tagBuffer += content;
             if (tagBuffer.includes(']')) {
               if (tagBuffer.includes('[EN]')) {
@@ -230,7 +234,14 @@ wss.on('connection', (ws, req) => {
               tagDetected = true;
               tagBuffer = '';
             } else {
-              continue; // Keep buffering until we see the closing bracket
+              continue; 
+            }
+          } else if (!tagDetected && charCount >= 10) {
+            // Fallback: Use primary voice if no tag found in first 10 chars
+            tagDetected = true; 
+            if (tagBuffer.length > 0) {
+                content = tagBuffer + content;
+                tagBuffer = '';
             }
           }
 
