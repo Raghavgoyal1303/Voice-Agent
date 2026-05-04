@@ -33,7 +33,7 @@ document.querySelector('h1').innerText = currentAgent.charAt(0).toUpperCase() + 
 const subtitleMap = {
     ken: "Tricity Real Estate Assistant",
     giulia: "Elite English Consultant",
-    lia: "Hymy-Klinikka Hammashoito"
+    ada: "Hymy-Klinikka Hammashoito"
 };
 document.querySelector('p').innerText = subtitleMap[currentAgent] || "AI Voice Assistant";
 

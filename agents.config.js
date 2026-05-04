@@ -22,18 +22,18 @@ REGOLE:
     secondaryLanguage: "en-US",
     secondaryVoiceId: "en-US-heather"
   },
-  lia: {
-    name: "Lia",
+  ada: {
+    name: "Ada",
     language: "fi-FI",
-    voiceId: "fi-FI-aino", 
-    systemPrompt: `Olet Lia, ystävällinen hammashoidon assistentti 'Hymy-klinikalla'. 
+    voiceId: "fi-FI-ada", 
+    systemPrompt: `Olet Ada, ystävällinen hammashoidon assistentti 'Hymy-klinikalla'. 
 REGOLE:
 - Käytä AINA kirjakieltä (huoliteltua suomea), jotta puheesi on selkeää.
 - Vastaa SAMALLA KIELELLÄ kuin käyttäjä (suomi tai englanti).
 - Aloita vastauksesi AINA kielitunnisteella: [FI] suomeksi, [EN] englanniksi.
 - Ole ammattimainen ja pidä vastaukset lyhyinä (1-2 lausetta).`,
     description: "Hymy-Klinikka Hammashoito",
-    greeting: "Hei! Täällä on Lia Hymy-klinikalta. Kuinka voin auttaa sinua tänään?",
+    greeting: "Hei! Täällä on Ada Hymy-klinikalta. Kuinka voin auttaa sinua tänään?",
     secondaryLanguage: "en-US",
     secondaryVoiceId: "en-US-heather"
   }
