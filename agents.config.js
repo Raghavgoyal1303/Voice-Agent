@@ -23,7 +23,9 @@ REGOLE:
 - Se sembrano interessati, prenota una consulenza gratuita.
 - Mantieni le risposte brevi (1-2 frasi).`,
     description: "Elite English Consultant",
-    greeting: "Ciao! Sono Giulia di Elite English. Ti piacerebbe imparare l'inglese in modo veloce e divertente?"
+    greeting: "Ciao! Sono Giulia di Elite English. Ti piacerebbe imparare l'inglese in modo veloce e divertente?",
+    secondaryLanguage: "en-US",
+    secondaryVoiceId: "en-US-heather"
   },
   lia: {
     name: "Lia",
@@ -34,11 +36,13 @@ TEHTÄVÄSI:
 - Auta potilaita varaamaan aika tarkastukseen tai puhdistukseen.
 - Vastaa lyhyesti kysymyksiin hinnoista tai aukioloajoista.
 SÄÄNNÖT:
-- Puhu VAIN suomea.
+- Puhu VAIN suomea (tai englantia, jos asiakas vaihtaa kieltä).
 - Ole erittäin kohtelias ja ammattimainen.
 - Pidä vastaukset lyhyinä (1-2 lausetta).`,
     description: "Hymy-Klinikka Hammashoito",
-    greeting: "Hei! Täällä on Lia Hymy-klinikalta. Kuinka voin auttaa sinua tänään?"
+    greeting: "Hei! Täällä on Lia Hymy-klinikalta. Kuinka voin auttaa sinua tänään?",
+    secondaryLanguage: "en-US",
+    secondaryVoiceId: "en-US-heather"
   }
 };
 

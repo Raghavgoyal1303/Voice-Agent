@@ -152,7 +152,7 @@ wss.on('connection', (ws, req) => {
   const setupDeepgram = () => {
     deepgramLive = deepgram.listen.live({
       model: 'nova-2',
-      language: profile.language, 
+      language: profile.secondaryLanguage ? 'multi' : profile.language, // Use multi-lang if secondary is defined
       punctuate: true,
       interim_results: false,
       endpointing: 1000, 
@@ -168,9 +168,18 @@ wss.on('connection', (ws, req) => {
 
     deepgramLive.on('Results', async (data) => {
       const transcript = data.channel?.alternatives?.[0]?.transcript;
+      const detectedLang = data.metadata?.language || profile.language;
+
       if (!transcript || transcript.trim().length < 2 || isProcessing) return;
 
-      console.log('🗣️ User said:', transcript);
+      console.log(`🗣️ User said (${detectedLang}):`, transcript);
+      
+      // Determine which voice to use based on detected language
+      let activeVoiceId = profile.voiceId;
+      if (profile.secondaryLanguage && detectedLang.startsWith('en')) {
+        activeVoiceId = profile.secondaryVoiceId;
+      }
+
       nudgeCount = 0; // Reset strikes when user speaks
       if (silenceTimer) clearTimeout(silenceTimer); // Stop timer while AI is thinking/speaking
       if (ws.readyState === WebSocket.OPEN) {
@@ -190,7 +199,7 @@ wss.on('connection', (ws, req) => {
           messages: [
             {
               role: 'system',
-              content: profile.systemPrompt
+              content: profile.systemPrompt + (profile.secondaryLanguage ? `\n\nBILINGUAL RULE: If the user speaks English, you MUST respond in English. If they speak ${profile.name === 'Lia' ? 'Finnish' : 'Italian'}, respond in that language.` : "")
             },
             ...recentHistory
           ],
@@ -216,7 +225,7 @@ wss.on('connection', (ws, req) => {
           if (/[।?!,]/.test(content)) {
             const textToSpeak = currentSentence.trim();
             if (textToSpeak.length > 0) {
-              await streamMurfAudioToBrowser(textToSpeak, ws, profile.voiceId);
+              await streamMurfAudioToBrowser(textToSpeak, ws, activeVoiceId);
               currentSentence = '';
             }
           }
@@ -224,7 +233,7 @@ wss.on('connection', (ws, req) => {
 
         const finalChunk = currentSentence.trim();
         if (finalChunk.length > 0) {
-          await streamMurfAudioToBrowser(finalChunk, ws, profile.voiceId);
+          await streamMurfAudioToBrowser(finalChunk, ws, activeVoiceId);
         }
         resetSilenceTimer(); // Reset timer after AI finishes speaking
         console.log(`🤖 ${profile.name}:`, fullReply);
