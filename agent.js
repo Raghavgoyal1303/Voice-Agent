@@ -152,7 +152,7 @@ wss.on('connection', (ws, req) => {
   const setupDeepgram = () => {
     deepgramLive = deepgram.listen.live({
       model: 'nova-2',
-      language: profile.secondaryLanguage ? 'multi' : profile.language, // Use multi-lang if secondary is defined
+      language: profile.language, // Use primary language for stability
       punctuate: true,
       interim_results: false,
       endpointing: 1000, 
@@ -168,17 +168,13 @@ wss.on('connection', (ws, req) => {
 
     deepgramLive.on('Results', async (data) => {
       const transcript = data.channel?.alternatives?.[0]?.transcript;
-      const detectedLang = data.metadata?.language || profile.language;
 
       if (!transcript || transcript.trim().length < 2 || isProcessing) return;
 
-      console.log(`🗣️ User said (${detectedLang}):`, transcript);
+      console.log(`🗣️ User said:`, transcript);
       
-      // Determine which voice to use based on detected language
+      // Default to primary voice
       let activeVoiceId = profile.voiceId;
-      if (profile.secondaryLanguage && detectedLang.startsWith('en')) {
-        activeVoiceId = profile.secondaryVoiceId;
-      }
 
       nudgeCount = 0; // Reset strikes when user speaks
       if (silenceTimer) clearTimeout(silenceTimer); // Stop timer while AI is thinking/speaking
@@ -211,14 +207,24 @@ wss.on('connection', (ws, req) => {
         let currentSentence = '';
         let fullReply = '';
         let firstToken = true;
+        let responseStarted = false;
 
         for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || '';
+          let content = chunk.choices[0]?.delta?.content || '';
           if (firstToken && content) {
             console.timeEnd('Groq TTFT');
             firstToken = false;
           }
           
+          // Detection Logic: Look for language tags like [EN], [FI], [IT]
+          if (content.includes('[EN]')) {
+            activeVoiceId = profile.secondaryVoiceId;
+            content = content.replace('[EN]', '');
+          } else if (content.includes('[FI]') || content.includes('[IT]')) {
+            activeVoiceId = profile.voiceId;
+            content = content.replace('[FI]', '').replace('[IT]', '');
+          }
+
           currentSentence += content;
           fullReply += content;
 
@@ -235,10 +241,11 @@ wss.on('connection', (ws, req) => {
         if (finalChunk.length > 0) {
           await streamMurfAudioToBrowser(finalChunk, ws, activeVoiceId);
         }
-        resetSilenceTimer(); // Reset timer after AI finishes speaking
-        console.log(`🤖 ${profile.name}:`, fullReply);
+        const cleanReply = fullReply.replace(/\[EN\]|\[FI\]|\[IT\]/g, '').trim();
+        resetSilenceTimer(); 
+        console.log(`🤖 ${profile.name}:`, cleanReply);
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'transcript', role: 'agent', text: fullReply, agentName: profile.name }));
+          ws.send(JSON.stringify({ type: 'transcript', role: 'agent', text: cleanReply, agentName: profile.name }));
         }
         history.push({ role: 'assistant', content: fullReply });
         conversations.set(callSid, history);
