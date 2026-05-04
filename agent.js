@@ -255,6 +255,7 @@ Keep responses very short (1-2 sentences).`
   });
 });
 
-server.listen(3000, () => {
-  console.log('🚀 Web Dialer Agent running → http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`🚀 Web Dialer Agent running on port ${PORT}`);
 });
