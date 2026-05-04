@@ -28,8 +28,13 @@ function stopRingtone() {
 const urlParams = new URLSearchParams(window.location.search);
 const currentAgent = urlParams.get('agent') || 'ken';
 
-// Update UI Title
+// Update UI Title and Subtitle
 document.querySelector('h1').innerText = currentAgent.charAt(0).toUpperCase() + currentAgent.slice(1);
+const subtitleMap = {
+    ken: "Tricity Real Estate Assistant",
+    giulia: "Elite English Consultant"
+};
+document.querySelector('p').innerText = subtitleMap[currentAgent] || "AI Voice Assistant";
 
 btnCall.onclick = async () => {
     try {

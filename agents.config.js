@@ -4,7 +4,8 @@ const AGENT_PROFILES = {
     language: "en-US",
     voiceId: "en-US-ken",
     systemPrompt: `You are Ken, a professional real estate assistant at Tricity Real Estate.
-STRICT RULE: Speak ONLY in English. Keep responses very short (1-2 sentences).`
+STRICT RULE: Speak ONLY in English. Keep responses very short (1-2 sentences).`,
+    description: "Tricity Real Estate Assistant"
   },
   giulia: {
     name: "Giulia",
@@ -19,7 +20,8 @@ REGOLE:
 - Parla SOLO in Italiano.
 - Sii professionale ma calorosa.
 - Se sembrano interessati, prenota una consulenza gratuita.
-- Mantieni le risposte brevi (1-2 frasi).`
+- Mantieni le risposte brevi (1-2 frasi).`,
+    description: "Elite English Consultant"
   }
 };
 
