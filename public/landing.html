@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxeEstate | AI-Powered Real Estate</title>
+    <meta name="description" content="Discover premium luxury properties with the help of our multilingual AI voice concierge.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">LUXE<span>ESTATE</span></div>
+        <ul class="nav-links">
+            <li><a href="#properties">Properties</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+        <button class="cta-btn">Book a Tour</button>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-overlay"></div>
+        <img src="assets/hero.png" alt="Luxury Mansion" class="hero-img">
+        <div class="hero-content">
+            <h1>Experience the Future of <br><span>Luxury Living</span></h1>
+            <p>Your multilingual AI guide is ready to help you find your dream home in any language.</p>
+            <div class="hero-btns">
+                <button class="primary-btn" onclick="toggleAgent()">Talk to Sarah AI</button>
+                <button class="secondary-btn">View Listings</button>
+            </div>
+        </div>
+    </header>
+
+    <section id="properties" class="properties-section">
+        <div class="section-header">
+            <h2>Featured Listings</h2>
+            <p>Handpicked premium estates for the discerning buyer.</p>
+        </div>
+        <div class="property-grid">
+            <div class="property-card">
+                <div class="property-img">
+                    <img src="assets/interior.png" alt="Penthouse">
+                    <span class="price">$4.2M</span>
+                </div>
+                <div class="property-info">
+                    <h3>Skyline Penthouse</h3>
+                    <p>Downtown Core • 4 Beds • 5 Baths</p>
+                </div>
+            </div>
+            <div class="property-card">
+                <div class="property-img">
+                    <img src="assets/building.png" alt="Eco Tower">
+                    <span class="price">$2.8M</span>
+                </div>
+                <div class="property-info">
+                    <h3>The Zenith Tower</h3>
+                    <p>Waterfront • 3 Beds • 3 Baths</p>
+                </div>
+            </div>
+            <div class="property-card">
+                <div class="property-img">
+                    <img src="assets/hero.png" alt="Mansion">
+                    <span class="price">$12.5M</span>
+                </div>
+                <div class="property-info">
+                    <h3>Oceanfront Manor</h3>
+                    <p>Laguna Beach • 7 Beds • 9 Baths</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Agent Sidebar/Widget -->
+    <div id="ai-agent-widget" class="ai-widget">
+        <div class="widget-header">
+            <div class="agent-avatar">✨</div>
+            <div class="agent-status">
+                <h3>Sarah AI</h3>
+                <span id="status-text">Online</span>
+            </div>
+            <button class="close-btn" onclick="toggleAgent()">×</button>
+        </div>
+        <div class="widget-content">
+            <div class="voice-visualizer">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <p class="agent-instruction">Speak in your preferred language to begin.</p>
+            <div id="chat-history" class="chat-history">
+                <!-- Messages will appear here -->
+                <div class="message agent">Hello! I'm Sarah, your multilingual real estate concierge. How can I assist you today?</div>
+            </div>
+        </div>
+        <div class="widget-footer">
+            <button id="btn-mic" class="mic-btn">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path fill="currentColor" d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+            </button>
+            <span id="mic-status">Click to talk</span>
+        </div>
+    </div>
+
+    <script src="voice-agent.js"></script>
+    <script>
+        function toggleAgent() {
+            document.getElementById('ai-agent-widget').classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

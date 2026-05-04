@@ -1,0 +1,24 @@
+{
+  "name": "twilio-test",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@deepgram/sdk": "^3.13.0",
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.15.2",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "groq-sdk": "^1.1.2",
+    "multer": "^2.1.1",
+    "twilio": "^6.0.0",
+    "wavefile": "^11.0.0",
+    "ws": "^8.20.0"
+  }
+}

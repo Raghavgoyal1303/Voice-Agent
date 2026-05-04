@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.log
+uploads/
+.DS_Store
+# Temporary files created by mistake
+console.error*
+console.log*
