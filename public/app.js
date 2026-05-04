@@ -32,7 +32,8 @@ const currentAgent = urlParams.get('agent') || 'ken';
 document.querySelector('h1').innerText = currentAgent.charAt(0).toUpperCase() + currentAgent.slice(1);
 const subtitleMap = {
     ken: "Tricity Real Estate Assistant",
-    giulia: "Elite English Consultant"
+    giulia: "Elite English Consultant",
+    lia: "Hymy-Klinikka Hammashoito"
 };
 document.querySelector('p').innerText = subtitleMap[currentAgent] || "AI Voice Assistant";
 

@@ -137,7 +137,9 @@ wss.on('connection', (ws, req) => {
           return;
         }
 
-        const nudge = profile.language.startsWith('it') ? "Ci sei ancora?" : "Are you still there?";
+        const nudge = profile.language.startsWith('it') ? "Ci sei ancora?" : 
+                      profile.language.startsWith('fi') ? "Oletko vielä siellä?" :
+                      "Are you still there?";
         console.log(`💤 Silence detected (Nudge ${nudgeCount}/3)...`);
         await streamMurfAudioToBrowser(nudge, ws, profile.voiceId);
         if (ws.readyState === WebSocket.OPEN) {
@@ -259,9 +261,7 @@ wss.on('connection', (ws, req) => {
           console.log('📞 Stream started');
           setupDeepgram();
           resetSilenceTimer(); // Start timer on call start
-          const greeting = profile.language.startsWith('it') 
-            ? `Ciao! Sono ${profile.name} di Elite English. Ti piacerebbe imparare l'inglese in modo veloce e divertente?`
-            : "Hello, thanks for calling! How can I help you today?";
+          const greeting = profile.greeting || "Hello!";
           streamMurfAudioToBrowser(greeting, ws, profile.voiceId)
             .then(() => resetSilenceTimer()); 
         } else if (data.type === 'stop') {
