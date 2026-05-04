@@ -19,6 +19,22 @@ app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Support for Twilio Outbound/Inbound calls
+app.post('/inbound', (req, res) => {
+  const agent = req.query.agent || 'ken';
+  const host = req.get('host');
+  const protocol = req.protocol === 'https' ? 'wss' : 'ws';
+  
+  res.type('text/xml');
+  res.send(`
+    <Response>
+      <Connect>
+        <Stream url="${protocol}://${host}/stream?agent=${agent}" />
+      </Connect>
+    </Response>
+  `);
+});
+
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server, path: '/stream' });
 

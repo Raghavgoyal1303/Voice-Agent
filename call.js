@@ -25,7 +25,7 @@ http.get('http://127.0.0.1:4040/api/tunnels', (res) => {
       console.log(`🔗 Using Ngrok URL: ${ngrokUrl}`);
 
       client.calls.create({
-        url: `${ngrokUrl}/inbound`,
+        url: `${ngrokUrl}/inbound?agent=giulia`,
         to: '+916284911102',
         from: process.env.TWILIO_PHONE_NUMBER,
       })
