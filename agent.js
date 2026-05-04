@@ -146,7 +146,7 @@ wss.on('connection', (ws, req) => {
           ws.send(JSON.stringify({ type: 'transcript', role: 'agent', text: nudge }));
         }
       }
-    }, 20000); // 20 seconds of silence
+    }, 40000); // Increased to 40 seconds for better stability
   };
 
   const setupDeepgram = () => {
@@ -207,7 +207,8 @@ wss.on('connection', (ws, req) => {
         let currentSentence = '';
         let fullReply = '';
         let firstToken = true;
-        let responseStarted = false;
+        let tagBuffer = '';
+        let tagDetected = false;
 
         for await (const chunk of stream) {
           let content = chunk.choices[0]?.delta?.content || '';
@@ -216,13 +217,21 @@ wss.on('connection', (ws, req) => {
             firstToken = false;
           }
           
-          // Detection Logic: Look for language tags like [EN], [FI], [IT]
-          if (content.includes('[EN]')) {
-            activeVoiceId = profile.secondaryVoiceId;
-            content = content.replace('[EN]', '');
-          } else if (content.includes('[FI]') || content.includes('[IT]')) {
-            activeVoiceId = profile.voiceId;
-            content = content.replace('[FI]', '').replace('[IT]', '');
+          // Buffer logic to catch [EN], [FI], [IT] even if split across chunks
+          if (!tagDetected && (content.includes('[') || tagBuffer.length > 0)) {
+            tagBuffer += content;
+            if (tagBuffer.includes(']')) {
+              if (tagBuffer.includes('[EN]')) {
+                activeVoiceId = profile.secondaryVoiceId;
+              } else {
+                activeVoiceId = profile.voiceId;
+              }
+              content = tagBuffer.replace(/\[EN\]|\[FI\]|\[IT\]/g, '');
+              tagDetected = true;
+              tagBuffer = '';
+            } else {
+              continue; // Keep buffering until we see the closing bracket
+            }
           }
 
           currentSentence += content;
