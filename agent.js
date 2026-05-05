@@ -40,9 +40,10 @@ const wss = new WebSocket.Server({ server, path: '/stream' });
 
 const conversations = new Map();
 
-async function streamMurfAudioToBrowser(text, ws, voiceId) {
+async function streamMurfAudioToBrowser(text, ws, voiceId, abortController) {
   return new Promise(async (resolve, reject) => {
     try {
+      if (abortController?.signal?.aborted) return resolve();
       const data = {
         voiceId: voiceId || 'en-US-ken', 
         style: 'Conversational',
@@ -58,7 +59,8 @@ async function streamMurfAudioToBrowser(text, ws, voiceId) {
           'Content-Type': 'application/json',
           'api-key': MURF_API_KEY
         },
-        responseType: 'stream'
+        responseType: 'stream',
+        signal: abortController?.signal
       });
 
       let firstChunk = true;
@@ -122,6 +124,8 @@ wss.on('connection', (ws, req) => {
   let audioQueue = [];
   let silenceTimer = null;
   let nudgeCount = 0;
+  let isCallActive = true;
+  let murfAbortController = null;
   conversations.set(callSid, []);
 
   const resetSilenceTimer = () => {
@@ -156,7 +160,7 @@ wss.on('connection', (ws, req) => {
   const setupDeepgram = () => {
     deepgramLive = deepgram.listen.live({
       model: 'nova-2',
-      language: profile.language, // Use primary language for stability
+      language: 'multi', // Restoring multi-lang for bilingual understanding
       punctuate: true,
       interim_results: false,
       endpointing: 1000, 
@@ -175,7 +179,7 @@ wss.on('connection', (ws, req) => {
 
       if (!transcript || transcript.trim().length < 2 || isProcessing) return;
 
-      console.log(`🗣️ User said:`, transcript);
+      console.log(`🗣️ Detected Speech: "${transcript}"`);
       
       // Default to primary voice
       let activeVoiceId = profile.voiceId;
@@ -216,6 +220,7 @@ wss.on('connection', (ws, req) => {
         let charCount = 0;
 
         for await (const chunk of stream) {
+          if (!isCallActive) break; // Kill LLM stream if call ended
           let content = chunk.choices[0]?.delta?.content || '';
           if (firstToken && content) {
             console.timeEnd('Groq TTFT');
@@ -225,8 +230,8 @@ wss.on('connection', (ws, req) => {
           charCount += content.length;
 
           // Buffer logic to catch [EN], [FI], [IT]
-          // SAFETY: If we've seen more than 10 characters and still no tag, just start speaking!
-          if (!tagDetected && (content.includes('[') || tagBuffer.length > 0) && charCount < 10) {
+          // SAFETY: If we've seen more than 5 characters and still no tag, just start speaking!
+          if (!tagDetected && (content.includes('[') || tagBuffer.length > 0) && charCount < 5) {
             tagBuffer += content;
             if (tagBuffer.includes(']')) {
               if (tagBuffer.includes('[EN]')) {
@@ -240,8 +245,8 @@ wss.on('connection', (ws, req) => {
             } else {
               continue; 
             }
-          } else if (!tagDetected && charCount >= 10) {
-            // Fallback: Use primary voice if no tag found in first 10 chars
+          } else if (!tagDetected && charCount >= 5) {
+            // Fallback: Use primary voice if no tag found in first 5 chars
             tagDetected = true; 
             if (tagBuffer.length > 0) {
                 content = tagBuffer + content;
@@ -254,16 +259,18 @@ wss.on('connection', (ws, req) => {
 
           if (/[।?!,]/.test(content)) {
             const textToSpeak = currentSentence.trim();
-            if (textToSpeak.length > 0) {
-              await streamMurfAudioToBrowser(textToSpeak, ws, activeVoiceId);
+            if (textToSpeak.length > 0 && isCallActive) {
+              murfAbortController = new AbortController();
+              await streamMurfAudioToBrowser(textToSpeak, ws, activeVoiceId, murfAbortController);
               currentSentence = '';
             }
           }
         }
 
         const finalChunk = currentSentence.trim();
-        if (finalChunk.length > 0) {
-          await streamMurfAudioToBrowser(finalChunk, ws, activeVoiceId);
+        if (finalChunk.length > 0 && isCallActive) {
+          murfAbortController = new AbortController();
+          await streamMurfAudioToBrowser(finalChunk, ws, activeVoiceId, murfAbortController);
         }
         const cleanReply = fullReply.replace(/\[EN\]|\[FI\]|\[IT\]/g, '').trim();
         resetSilenceTimer(); 
@@ -299,13 +306,19 @@ wss.on('connection', (ws, req) => {
         const data = JSON.parse(message.toString());
         if (data.type === 'start') {
           console.log('📞 Stream started');
+          isCallActive = true;
           setupDeepgram();
-          resetSilenceTimer(); // Start timer on call start
+          resetSilenceTimer(); 
           const greeting = profile.greeting || "Hello!";
-          streamMurfAudioToBrowser(greeting, ws, profile.voiceId)
+          murfAbortController = new AbortController();
+          streamMurfAudioToBrowser(greeting, ws, profile.voiceId, murfAbortController)
             .then(() => resetSilenceTimer()); 
         } else if (data.type === 'stop') {
+          console.log('🛑 Call ended by user');
+          isCallActive = false;
+          murfAbortController?.abort();
           deepgramLive?.finish();
+          if (silenceTimer) clearTimeout(silenceTimer);
         }
       } catch (e) {}
     }

@@ -33,7 +33,7 @@ document.querySelector('h1').innerText = currentAgent.charAt(0).toUpperCase() + 
 const subtitleMap = {
     ken: "Tricity Real Estate Assistant",
     giulia: "Elite English Consultant",
-    lia: "Hymy-Klinikka Hammashoito"
+    fidan: "Hymy-Klinikka Hammashoito"
 };
 document.querySelector('p').innerText = subtitleMap[currentAgent] || "AI Voice Assistant";
 
@@ -150,6 +150,12 @@ btnEnd.onclick = () => {
 };
 
 function endCall() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'stop' }));
+        ws.close();
+        ws = null;
+    }
+
     stopRingtone();
     statusDiv.innerText = 'Call Ended';
     appContainer.classList.remove('active-call');
@@ -160,6 +166,12 @@ function endCall() {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        mediaRecorder = null;
+    }
+
+    if (audioContext) {
+        audioContext.close().catch(e => console.error('Error closing AudioContext:', e));
+        audioContext = null;
     }
     
     setTimeout(() => {
