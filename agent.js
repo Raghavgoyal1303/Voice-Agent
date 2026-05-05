@@ -56,7 +56,7 @@ async function streamMurfAudioToBrowser(text, ws, voiceId) {
       const res = await axios.post('https://api.murf.ai/v1/speech/stream', data, {
         headers: {
           'Content-Type': 'application/json',
-          'token': MURF_API_KEY
+          'api-key': MURF_API_KEY
         },
         responseType: 'stream'
       });
